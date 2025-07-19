@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <title>BESO BOT موسوعة ذكية</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Cairo', sans-serif;
+      background: linear-gradient(135deg, #0f0f0f, #1a1a1a);
+      color: #fff;
+      overflow-x: hidden;
+    }
+
+    h1 {
+      text-align: center;
+      margin: 2vh 0 1vh;
+      font-size: 2.5em;
+      position: relative;
+      animation: fadeInDown 1s ease;
+    }
+
+    #robot {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 1vh;
+    }
+
+    #chat-box {
+      max-height: 45vh;
+      overflow-y: auto;
+      background: #1c1c1c;
+      padding: 2vh 2vw;
+      margin: 3vh auto;
+      width: 90vw;
+      max-width: 800px;
+      border-radius: 15px;
+      box-shadow: 0 0 50px #0af5;
+    }
+
+    #user-input, #send-btn {
+      padding: 1em;
+      border-radius: 10px;
+      border: none;
+      font-size: 1rem;
+    }
+
+    #user-input {
+      width: 70%;
+      background: #333;
+      color: white;
+    }
+
+    #send-btn {
+      background: #0af;
+      color: white;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    #send-btn:hover {
+      background: #08c;
+    }
+
+    .input-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 3vh;
+      padding: 0 2vw;
+    }
+
+    .media-section {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 15px;
+      padding: 2vh 2vw;
+      animation: fadeIn 1s ease-in-out;
+    }
+
+    img {
+      width: 280px;
+      max-width: 90vw;
+      border-radius: 12px;
+      box-shadow: 0 0 10px #000;
+      transition: transform 0.4s ease;
+    }
+
+    img:hover {
+      transform: scale(1.05);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeInDown {
+      from { opacity: 0; transform: translateY(-40px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .bot-message, .user-message {
+      margin: 1vh 0;
+      padding: 1vh 1vw;
+      border-radius: 10px;
+      max-width: 80%;
+      line-height: 1.6;
+      word-wrap: break-word;
+    }
+
+    .user-message {
+      background: #0af2;
+      margin-right: auto;
+      text-align: right;
+    }
+
+    .bot-message {
+      background: #444;
+      margin-left: auto;
+      text-align: left;
+    }
+
+    .robot-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-top: 2vh;
+      animation: floatUp 2s ease-out forwards;
+    }
+
+    .robot-3d {
+      width: 200px;
+      max-width: 50vw;
+      height: auto;
+      filter: drop-shadow(0 0 10px #0af);
+      transform: perspective(600px) rotateY(0deg);
+      animation: robotFloat 3s infinite ease-in-out;
+    }
+
+    @keyframes floatUp {
+      from { opacity: 0; transform: translateY(100px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes robotFloat {
+      0% { transform: translateY(0) rotateY(0deg); }
+      50% { transform: translateY(-15px) rotateY(10deg); }
+      100% { transform: translateY(0) rotateY(0deg); }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🤖 BESO BOT  </h1>
+
+  <!-- 3D Robot Animation -->
+  <div class="robot-container">
+    <img src="AI-Robot-finding-something.gif" alt="روبوت 3D" class="robot-3d" />
+  </div>
+
+  <div id="chat-box"></div>
+
+  <div class="input-row">
+    <input type="text" id="user-input" placeholder="اكتب أي موضوع :    ..." />
+    <button id="send-btn">إرسال</button>
+  </div>
+
+  <div class="media-section" id="media-section"></div>
+
+  <script>
+    const chatBox = document.getElementById("chat-box");
+    const userInput = document.getElementById("user-input");
+    const sendBtn = document.getElementById("send-btn");
+    const mediaSection = document.getElementById("media-section");
+
+    const UNSPLASH_KEY = "3U87wEsJMDsPM-Z6EKZQXXxnpSXOG-Ym8jVUpE0Hng4";
+
+    async function fetchImages(query) {
+      const randomPage = Math.floor(Math.random() * 90) + 1;
+      const res = await fetch(`https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&per_page=6&page=${randomPage}&client_id=${UNSPLASH_KEY}`);
+      const data = await res.json();
+      return data.results.map(p => p.urls.small);
+    }
+
+    function generateLongBotResponse(msg) {
+      return `🤖  📸 جهز نفسك! دلوقتي هتشوف صور مذهلة تولدت مخصوص ليك عن ${msg} \n🧠 كل صورة بتتولد حسب اللي طلبته، يعني خيالك هو الحدود! 🚀  \nاستعد تشوف الإبداع بيتحول لصورة قدام عنيك! 😍`;
+    }
+
+sendBtn.onclick = async () => {
+  const msg = userInput.value.trim();
+  if (msg === "") return;
+
+  chatBox.innerHTML += `<div class="user-message">🧑‍💻 ${msg}</div>`;
+  userInput.value = "";
+  mediaSection.innerHTML = `<div style="color:gray">جاري تحميل الصور...</div>`;
+
+  const images = await fetchImages(msg);
+  const botReply = generateLongBotResponse(msg);
+
+  chatBox.innerHTML += `<div class="bot-message">${botReply}</div>`;
+
+  mediaSection.innerHTML = "";
+  if (images.length === 0) {
+    mediaSection.innerHTML = `<div style="color:red">لم يتم العثور على صور لهذا الموضوع. جرب وصفًا مختلفًا.</div>`;
+  } else {
+    images.forEach(src => {
+      mediaSection.innerHTML += `<img src="${src}" alt="صورة عن ${msg}" />`;
+    });
+  }
+
+  chatBox.scrollTop = chatBox.scrollHeight;
+};
+
+  </script>
+</body>
+</html>
