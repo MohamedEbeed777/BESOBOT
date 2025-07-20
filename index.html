@@ -171,13 +171,15 @@
 
   <div class="media-section" id="media-section"></div>
 
-  <script>
+  ...
+<script>
+
   const chatBox = document.getElementById("chat-box");
   const userInput = document.getElementById("user-input");
   const sendBtn = document.getElementById("send-btn");
   const mediaSection = document.getElementById("media-section");
-
   const UNSPLASH_KEY = "3U87wEsJMDsPM-Z6EKZQXXxnpSXOG-Ym8jVUpE0Hng4";
+  let currentUtterance = null;
 
   async function fetchImages(query) {
     const res = await fetch(`https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&per_page=9&client_id=${UNSPLASH_KEY}`);
@@ -186,20 +188,16 @@
   }
 
   async function fetchWikipediaSummary(query) {
-    // جرّب البحث في ويكيبيديا العربية أولاً
     let res = await fetch(`https://ar.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`);
     if (res.ok) {
       const data = await res.json();
-      if (data.extract) return `📚 من ويكيبيديا العربية:<br>${data.extract}`;
+      if (data.extract) return { text: data.extract, lang: "ar" };
     }
-
-    // إذا لم توجد نتيجة، جرّب بالإنجليزية
     res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`);
     if (res.ok) {
       const data = await res.json();
-      if (data.extract) return `📘 من Wikipedia الإنجليزية:<br>${data.extract}`;
+      if (data.extract) return { text: data.extract, lang: "en" };
     }
-
     throw new Error("لم يتم العثور على الموضوع لا بالعربية ولا بالإنجليزية.");
   }
 
@@ -209,6 +207,26 @@
       .replace(/[^\w\s\u0600-\u06FF]/gi, '')
       .split(' ')
       .filter(word => word.length > 2 && !stopWords.includes(word.toLowerCase()));
+  }
+
+  function isArabic(text) {
+    const arabicRegex = /[\u0600-\u06FF]/;
+    return arabicRegex.test(text);
+  }
+
+  function speak(text, lang, onEndCallback) {
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = lang === "ar" ? "ar-EG" : "en-US";
+    const voices = window.speechSynthesis.getVoices();
+    const voice = voices.find(v => v.lang === utterance.lang || v.lang.includes(lang));
+    if (voice) {
+      utterance.voice = voice;
+    }
+    utterance.onend = () => {
+      if (onEndCallback) onEndCallback();
+    };
+    window.speechSynthesis.speak(utterance);
+    return utterance;
   }
 
   sendBtn.onclick = async () => {
@@ -223,8 +241,39 @@
     const query = keywords.join(' ');
 
     try {
-      const wikiText = await fetchWikipediaSummary(query);
-      chatBox.innerHTML += `<div class="bot-message">${wikiText}</div>`;
+      const wiki = await fetchWikipediaSummary(query);
+      const plainText = wiki.text;
+      const lang = wiki.lang;
+      const isAr = lang === "ar";
+      const audioBtnId = `audio-btn-${Date.now()}`;
+
+      chatBox.innerHTML += `
+        <div class="bot-message">
+          ${isAr ? "📚 من ويكيبيديا العربية:" : "📘 من Wikipedia الإنجليزية:"}<br>${plainText}
+          <br>
+          <button id="${audioBtnId}" style="margin-top: 10px; padding: 8px 15px; background: #0af; color: white; border: none; border-radius: 8px; cursor: pointer;">
+            🔊 تشغيل الصوت
+          </button>
+        </div>
+      `;
+
+      const audioBtn = document.getElementById(audioBtnId);
+      let isSpeaking = false;
+
+      audioBtn.onclick = () => {
+        if (!isSpeaking) {
+          currentUtterance = speak(plainText, lang, () => {
+            isSpeaking = false;
+            audioBtn.textContent = "🔊 تشغيل الصوت";
+          });
+          isSpeaking = true;
+          audioBtn.textContent = "⏹️ إيقاف الصوت";
+        } else {
+          window.speechSynthesis.cancel();
+          isSpeaking = false;
+          audioBtn.textContent = "🔊 تشغيل الصوت";
+        }
+      };
     } catch (err) {
       chatBox.innerHTML += `<div class="bot-message">❌ لم أتمكن من العثور على معلومة من ويكيبيديا.</div>`;
     }
