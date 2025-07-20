@@ -173,7 +173,6 @@
 
   ...
 <script>
-
   const chatBox = document.getElementById("chat-box");
   const userInput = document.getElementById("user-input");
   const sendBtn = document.getElementById("send-btn");
@@ -188,17 +187,33 @@
   }
 
   async function fetchWikipediaSummary(query) {
-    let res = await fetch(`https://ar.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`);
-    if (res.ok) {
-      const data = await res.json();
-      if (data.extract) return { text: data.extract, lang: "ar" };
+    // البحث في ويكيبيديا العربية أولاً
+    let searchRes = await fetch(`https://ar.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&utf8=&format=json&origin=*`);
+    let searchData = await searchRes.json();
+
+    if (searchData.query.search.length > 0) {
+      let topTitle = searchData.query.search[0].title;
+      let summaryRes = await fetch(`https://ar.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(topTitle)}`);
+      if (summaryRes.ok) {
+        const summaryData = await summaryRes.json();
+        if (summaryData.extract) return { text: summaryData.extract, lang: "ar" };
+      }
     }
-    res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`);
-    if (res.ok) {
-      const data = await res.json();
-      if (data.extract) return { text: data.extract, lang: "en" };
+
+    // لو العربية فشلت، نبحث في ويكيبيديا الإنجليزية
+    let enSearchRes = await fetch(`https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&utf8=&format=json&origin=*`);
+    let enSearchData = await enSearchRes.json();
+
+    if (enSearchData.query.search.length > 0) {
+      let topEnTitle = enSearchData.query.search[0].title;
+      let enSummaryRes = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(topEnTitle)}`);
+      if (enSummaryRes.ok) {
+        const enSummaryData = await enSummaryRes.json();
+        if (enSummaryData.extract) return { text: enSummaryData.extract, lang: "en" };
+      }
     }
-    throw new Error("لم يتم العثور على الموضوع لا بالعربية ولا بالإنجليزية.");
+
+    throw new Error("لم يتم العثور على معلومات كافية.");
   }
 
   function extractKeywords(sentence) {
@@ -207,11 +222,6 @@
       .replace(/[^\w\s\u0600-\u06FF]/gi, '')
       .split(' ')
       .filter(word => word.length > 2 && !stopWords.includes(word.toLowerCase()));
-  }
-
-  function isArabic(text) {
-    const arabicRegex = /[\u0600-\u06FF]/;
-    return arabicRegex.test(text);
   }
 
   function speak(text, lang, onEndCallback) {
@@ -233,15 +243,18 @@
     const msg = userInput.value.trim();
     if (msg === "") return;
 
+    // عرض رسالة المستخدم
     chatBox.innerHTML += `<div class="user-message">🧑‍💻 ${msg}</div>`;
     userInput.value = "";
     mediaSection.innerHTML = `<div style="color:gray">جاري تحميل الصور والمعلومة...</div>`;
 
+    // استخراج الكلمات المفتاحية (اختياري للصور فقط)
     const keywords = extractKeywords(msg);
-    const query = keywords.join(' ');
+    const query = keywords.length > 0 ? keywords.join(' ') : msg;
 
+    // ويكيبيديا
     try {
-      const wiki = await fetchWikipediaSummary(query);
+      const wiki = await fetchWikipediaSummary(msg);
       const plainText = wiki.text;
       const lang = wiki.lang;
       const isAr = lang === "ar";
@@ -278,6 +291,7 @@
       chatBox.innerHTML += `<div class="bot-message">❌ لم أتمكن من العثور على معلومة من ويكيبيديا.</div>`;
     }
 
+    // الصور من Unsplash
     try {
       const images = await fetchImages(query);
       mediaSection.innerHTML = "";
@@ -295,6 +309,7 @@
     chatBox.scrollTop = chatBox.scrollHeight;
   };
 </script>
+
 
 </body>
 </html>
