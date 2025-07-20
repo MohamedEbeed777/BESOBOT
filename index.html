@@ -189,6 +189,13 @@
     function generateLongBotResponse(msg) {
       return `🤖  📸 جهز نفسك! دلوقتي هتشوف صور مذهلة تولدت مخصوص ليك عن ${msg} \n🧠 كل صورة بتتولد حسب اللي طلبته، يعني خيالك هو الحدود! 🚀  \nاستعد تشوف الإبداع بيتحول لصورة قدام عنيك! 😍`;
     }
+function extractKeywords(sentence) {
+  const stopWords = ["عن", "هو", "هي", "كان", "التي", "الذي", "ذلك", "من", "في", "على", "مع", "الى", "و", "أن", "ما", "لم", "لن", "هذه"];
+  return sentence
+    .replace(/[^\w\s\u0600-\u06FF]/gi, '') // دعم العربي بالكامل
+    .split(' ')
+    .filter(word => word.length > 2 && !stopWords.includes(word.toLowerCase()));
+}
 
 sendBtn.onclick = async () => {
   const msg = userInput.value.trim();
@@ -198,7 +205,10 @@ sendBtn.onclick = async () => {
   userInput.value = "";
   mediaSection.innerHTML = `<div style="color:gray">جاري تحميل الصور...</div>`;
 
-  const images = await fetchImages(msg);
+  const keywords = extractKeywords(msg);
+  const query = keywords.join(' ') + ` ${Math.random().toString(36).substring(7)}`; // لإجبار تغيير النتائج
+
+  const images = await fetchImages(query);
   const botReply = generateLongBotResponse(msg);
 
   chatBox.innerHTML += `<div class="bot-message">${botReply}</div>`;
@@ -214,6 +224,7 @@ sendBtn.onclick = async () => {
 
   chatBox.scrollTop = chatBox.scrollHeight;
 };
+
 
   </script>
 </body>
