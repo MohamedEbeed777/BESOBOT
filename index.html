@@ -182,13 +182,6 @@
       justify-content: center;
       gap: 15px;
     }
-    .p11{
-display: block;
-      font-size: 10px;
-    }
-    .div11{
-      text-align: center;
-    }
   </style>
 </head>
 <body>
@@ -205,11 +198,8 @@ display: block;
   <div class="input-row">
     <input type="text" id="user-input" placeholder=" اكتب أي موضوع  :    ..." />
     <button id="send-btn">إرسال</button>
-
-   
+  
   </div>
-      <div class="div11"> <h2 class="p11">اذا لم تظهر صور الذكاء الاصصطناعى بعد انتظر بضع لحظات ....</h2>
-    <h1 class="p11"> يفضل الكتابه باللغه الانجليزيه اذا اردت توليد صور بالذكاء الاصطناعى</h1></div>
 
   <div class="media-section" id="media-section">
     <div class="tab-container" id="tab-container"></div>
@@ -225,7 +215,7 @@ display: block;
   const aiImagesContainer = document.getElementById("ai-images");
   const tabContainer = document.getElementById("tab-container");
   const UNSPLASH_KEY = "3U87wEsJMDsPM-Z6EKZQXXxnpSXOG-Ym8jVUpE0Hng4";
-  const HF_API_KEY = "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"; // استبدل بمفتاح API الخاص بك
+  const HF_API_KEY = "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"; // استبدل بمفتاح API الخاص بك
   let currentUtterance = null;
 
   // إنشاء ألسنة التبويب
