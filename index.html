@@ -277,6 +277,32 @@
     .back-btn:hover {
       background: #777;
     }
+    
+    .user-translation-buttons {
+      display: flex;
+      justify-content: flex-start;
+      gap: 10px;
+      margin-top: 5px;
+    }
+    
+    .user-translate-btn {
+      padding: 3px 8px;
+      background: #333;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 0.7em;
+      transition: background 0.3s;
+    }
+    
+    .user-translate-btn.en {
+      background: #1a73e8;
+    }
+    
+    .user-translate-btn.fr {
+      background: #4285f4;
+    }
   </style>
 </head>
 <body>
@@ -443,7 +469,16 @@ sendBtn.onclick = async () => {
   const msg = userInput.value.trim();
   if (!msg) return;
 
-  chatBox.innerHTML += `<div class="user-message">🧑‍💻 ${msg}</div>`;
+  const messageId = `msg-${Date.now()}`;
+  chatBox.innerHTML += `
+    <div class="user-message" id="${messageId}" data-original-text="${encodeURIComponent(msg)}" data-lang="ar">
+      🧑‍💻 ${msg}
+      <div class="user-translation-buttons">
+        <button class="user-translate-btn en" onclick="translateMessage('${messageId}', 'en')">EN</button>
+        <button class="user-translate-btn fr" onclick="translateMessage('${messageId}', 'fr')">FR</button>
+      </div>
+    </div>`;
+    
   userInput.value = "";
   createTabs();
 
@@ -456,16 +491,16 @@ sendBtn.onclick = async () => {
   try {
     const wiki = await fetchWikipediaSummary(query);
     const audioBtnId = `audio-${Date.now()}`;
-    const messageId = `msg-${Date.now()}`;
+    const botMessageId = `msg-${Date.now()}`;
     
     // حفظ النص الأصلي في سمة data
     chatBox.innerHTML += `
-      <div class="bot-message" id="${messageId}" data-original-text="${encodeURIComponent(wiki.text)}" data-lang="${wiki.lang}">
+      <div class="bot-message" id="${botMessageId}" data-original-text="${encodeURIComponent(wiki.text)}" data-lang="${wiki.lang}">
         ${wiki.lang === "ar" ? "📚 ويكيبيديا العربية:" : "📘 Wikipedia:"}<br>${wiki.text}<br>
         <button id="${audioBtnId}" class="audio-btn">🔊 تشغيل الصوت</button>
         <div class="translation-buttons">
-          <button class="translate-btn en" onclick="translateMessage('${messageId}', 'en')">English</button>
-          <button class="translate-btn fr" onclick="translateMessage('${messageId}', 'fr')">Français</button>
+          <button class="translate-btn en" onclick="translateMessage('${botMessageId}', 'en')">English</button>
+          <button class="translate-btn fr" onclick="translateMessage('${botMessageId}', 'fr')">Français</button>
         </div>
       </div>`;
       
@@ -598,6 +633,15 @@ window.restoreOriginalMessage = function(messageId) {
           audioBtn.textContent = "⏹️ إيقاف الصوت";
         }
       };
+    }
+    
+    // إعادة تعيين أحداث الترجمة لأزرار المستخدم
+    const userTranslateBtns = messageElement.querySelectorAll('.user-translate-btn');
+    if (userTranslateBtns.length > 0) {
+      userTranslateBtns.forEach(btn => {
+        const lang = btn.textContent.trim().toLowerCase();
+        btn.onclick = () => translateMessage(messageId, lang);
+      });
     }
   }
 };
